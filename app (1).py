@@ -128,3 +128,5 @@ c7.metric(
 )
 
 st.divider()
+streamlit run app.py
+
