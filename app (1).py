@@ -3,76 +3,75 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 
-# -----------------------------
-# PAGE CONFIG
-# -----------------------------
+# -------------------------------------------------
+# PAGE CONFIGURATION
+# -------------------------------------------------
 st.set_page_config(
     page_title="Factory Reallocation & Shipping Optimization",
     page_icon="🏭",
     layout="wide"
 )
 
-# -----------------------------
+# -------------------------------------------------
 # LOAD DATA
-# -----------------------------
+# -------------------------------------------------
 @st.cache_data
 def load_data():
     df = pd.read_csv("Cleaned_Nassau_Data.csv")
+
+    # Create Lead Time if missing
+    if "Lead Time" not in df.columns:
+        df["Order Date"] = pd.to_datetime(df["Order Date"], dayfirst=True)
+        df["Ship Date"] = pd.to_datetime(df["Ship Date"], dayfirst=True)
+        df["Lead Time"] = (
+            df["Ship Date"] - df["Order Date"]
+        ).dt.days
+
+    # Create Profit Margin if missing
+    if "Profit Margin" not in df.columns:
+        df["Profit Margin"] = (
+            df["Gross Profit"] / df["Sales"]
+        ) * 100
+
     return df
 
 df = load_data()
 
-# -----------------------------
-# CREATE EXTRA COLUMNS
-# -----------------------------
-if "Lead Time" not in df.columns:
-    df["Order Date"] = pd.to_datetime(df["Order Date"], dayfirst=True)
-    df["Ship Date"] = pd.to_datetime(df["Ship Date"], dayfirst=True)
-    df["Lead Time"] = (df["Ship Date"] - df["Order Date"]).dt.days
-
-if "Profit Margin" not in df.columns:
-    df["Profit Margin"] = (
-        df["Gross Profit"] / df["Sales"]
-    ) * 100
-
-# -----------------------------
+# -------------------------------------------------
 # TITLE
-# -----------------------------
+# -------------------------------------------------
 st.title("🏭 Factory Reallocation & Shipping Optimization Recommendation System")
 
-st.markdown(
-"""
-This dashboard analyzes Nassau Candy Distributor's shipping
-performance and provides insights into sales, profit,
-shipping lead time and optimization opportunities.
-"""
-)
+st.markdown("""
+Analyze sales, shipping performance, profit,
+lead time and factory optimization using interactive charts.
+""")
 
-# -----------------------------
-# SIDEBAR
-# -----------------------------
-st.sidebar.title("Dashboard Filters")
+# -------------------------------------------------
+# SIDEBAR FILTERS
+# -------------------------------------------------
+st.sidebar.header("Filters")
 
 region = st.sidebar.multiselect(
-    "Select Region",
+    "Region",
     sorted(df["Region"].unique()),
     default=sorted(df["Region"].unique())
 )
 
 division = st.sidebar.multiselect(
-    "Select Division",
+    "Division",
     sorted(df["Division"].unique()),
     default=sorted(df["Division"].unique())
 )
 
-shipmode = st.sidebar.multiselect(
-    "Select Ship Mode",
+ship_mode = st.sidebar.multiselect(
+    "Ship Mode",
     sorted(df["Ship Mode"].unique()),
     default=sorted(df["Ship Mode"].unique())
 )
 
 country = st.sidebar.multiselect(
-    "Select Country",
+    "Country",
     sorted(df["Country/Region"].unique()),
     default=sorted(df["Country/Region"].unique())
 )
@@ -80,52 +79,52 @@ country = st.sidebar.multiselect(
 filtered_df = df[
     (df["Region"].isin(region)) &
     (df["Division"].isin(division)) &
-    (df["Ship Mode"].isin(shipmode)) &
+    (df["Ship Mode"].isin(ship_mode)) &
     (df["Country/Region"].isin(country))
 ]
 
-# -----------------------------
-# KPI SECTION
-# -----------------------------
+# -------------------------------------------------
+# KPI CARDS
+# -------------------------------------------------
 st.subheader("📊 Key Performance Indicators")
 
-col1, col2, col3, col4 = st.columns(4)
+c1, c2, c3, c4 = st.columns(4)
 
-col1.metric(
+c1.metric(
     "Total Orders",
     len(filtered_df)
 )
 
-col2.metric(
+c2.metric(
     "Total Sales",
     f"${filtered_df['Sales'].sum():,.2f}"
 )
 
-col3.metric(
+c3.metric(
     "Total Gross Profit",
     f"${filtered_df['Gross Profit'].sum():,.2f}"
 )
 
-col4.metric(
+c4.metric(
     "Average Lead Time",
     f"{filtered_df['Lead Time'].mean():.2f} Days"
 )
 
-col5, col6, col7 = st.columns(3)
+c5, c6, c7 = st.columns(3)
 
-col5.metric(
+c5.metric(
     "Average Profit Margin",
     f"{filtered_df['Profit Margin'].mean():.2f}%"
 )
 
-col6.metric(
+c6.metric(
     "Average Sales",
     f"${filtered_df['Sales'].mean():,.2f}"
 )
 
-col7.metric(
-    "Average Units Sold",
+c7.metric(
+    "Average Units",
     f"{filtered_df['Units'].mean():.2f}"
 )
 
-st.markdown("---")
+st.divider()
